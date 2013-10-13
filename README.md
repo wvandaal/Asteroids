@@ -1,5 +1,6 @@
 # Asteroids.js
 You know the drill. Asteroids is fun. JS is also fun.  
+    
     var fun = js + asteroids;
 
 ## Construction
