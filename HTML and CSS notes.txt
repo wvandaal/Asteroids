@@ -1,0 +1,31 @@
+HTML/CSS/SCRIPT NOTES
+
++ DOCTYPE html
+	- relic from XHTML days
+	- used to be specific, very general now
++ <head>
+	- store stylesheets, scripts, etc.
+		- ** best practice is actually to load JS scripts last so that content will render first, followed by scripts
+	- loaded first, before rest of page
++ CSS precedence
+	- html tags (h1, body, ul) have lowest precedence
+	- classes have precedence over html tags
+	- ids are unique and have precedence over everything
++ CSS Rules
+	- undefined attributes inherit from their parents
+	- body h1 { rules } will apply all rules therein to all h1s within the body, no matter how far they are nested
+	- body > h1 { rules } will apply all rules therein to all h1s nested one level deep in the body
+	- specify tags with certain attributes by using h1[attibute='value']
++ The html Block Model
+	- width/height
+		- unspecified, will grow to the width of the parent and then wrap the contents of the block (div/span/pre)
+		- max/min-width/height can be used in conjunction with width and height to specify bounds of the content relative to the scaling of the page, etc.
+	- padding
+		- adds padding outside of block
+			- e.g. if the width of the block is 100 and the padding is 10, the total width will be 120
+			- background color, etc. will apply to padded space as well as content
+	- border
+		- added outside of content and padding
+	- margin
+		- "private" space around block
+		- empty space, does not have and styling applied to it
