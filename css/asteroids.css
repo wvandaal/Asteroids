@@ -1,3 +1,7 @@
+html {
+	background: url(../images/dark_linen.png) center center;
+}
+
 canvas {
 	margin: 2% auto;
 	display: block;
