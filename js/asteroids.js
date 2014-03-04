@@ -1,6 +1,5 @@
-
-// var allows Asteroids to be called by jQuery in page
-var Asteroids = (function() {
+var Asteroids = (function(window, undefined) {
+  "use strict";
 
   ////////////////////////
   // MovingObject Class //
@@ -51,21 +50,21 @@ var Asteroids = (function() {
   function Asteroid(pos, radius, velocity) {
     MovingObject.call(this, pos, velocity);
     this.radius = radius;
-
-    //Optional image sprite for Asteroid class (see Asteroid.draw() to implement)
-    this.sprite = new Image();
-    this.sprite.src = 'asteroid.png'
   }
 
   //Generates a randomly placed asteroid with a random velocity
   Asteroid.randomAsteroid = function (width, height, ship_pos) {
-    var radius = Math.floor(1 + Math.random() * 5) * 10,
-        i = (Math.random() < .5) ? 1 : -1,
-        j = (Math.random() < .5) ? 1 : -1,
-        pos = {"x": Math.floor(Math.random() * width),
-               "y": Math.floor(Math.random() * height)},
-        velocity = {"x": Math.ceil(Math.random() * 3 * i),
-                    "y": Math.ceil(Math.random() * 3 * j)};
+    var radius    = Math.floor(1 + Math.random() * 5) * 10,
+        i         = (Math.random() < .5) ? 1 : -1,
+        j         = (Math.random() < .5) ? 1 : -1,
+        pos       = {
+                      "x": Math.floor(Math.random() * width),
+                      "y": Math.floor(Math.random() * height)},
+        velocity  = {
+                      "x": Math.ceil(Math.random() * 3) * i,
+                      "y": Math.ceil(Math.random() * 3) * j
+                    };
+
     return new Asteroid(pos, radius, velocity);
   };
 
@@ -83,21 +82,24 @@ var Asteroids = (function() {
     ctx.arc(
       this.position.x, this.position.y,
       this.radius, 0, 2 * Math.PI, false);
-    ctx.strokeStyle = '#ff0000'  ;
+    ctx.strokeStyle = '#ff0000';
     ctx.stroke();
     ctx.fill();
   };
 
   var img = new Image();
-  img.src = 'planet.png';
+  img.src = 'images/planet.png';
 
   //////////////////
   // Bullet Class //
   //////////////////
   function Bullet(pos, angle) {
-    var speed = 30;
-    var velocity = {"x": speed * Math.cos(angle - Math.PI/2),
-                    "y": speed * Math.sin(angle - Math.PI/2)};
+    var speed     = 30,
+        velocity  = {
+                      "x": speed * Math.cos(angle - Math.PI/2),
+                      "y": speed * Math.sin(angle - Math.PI/2)
+                    };
+
     MovingObject.call(this, pos, velocity);
     this.radius = 4;
     this.angle = angle;
@@ -126,9 +128,12 @@ var Asteroids = (function() {
 
   //Returns true if Bullet is offscreen
   Bullet.prototype.offscreen = function(width, height){
-    var x_pos = this.position.x, y_pos = this.position.y, radius = this.radius;
-    return((x_pos + radius) < 0 || (x_pos - radius) > width ||
-          (y_pos + radius) < 0 || (y_pos - radius) > height);
+    var x_pos   = this.position.x,
+        y_pos   = this.position.y, 
+        radius  = this.radius;
+
+    return ((x_pos + radius) < 0 || (x_pos - radius) > width ||
+            (y_pos + radius) < 0 || (y_pos - radius) > height);
   };
 
 
@@ -136,13 +141,15 @@ var Asteroids = (function() {
   // Ship Class //
   ////////////////
   function Ship(width, height) {
-    var pos = {'x': width/2, 'y': height/2}
+    var pos = {'x': width/2, 'y': height/2};
+
     MovingObject.call(this, pos, {'x': 0, 'y': 0});
     this.radius = 30;
     this.angle = 0;
     this.sprite = new Image();
-    this.sprite.src = 'ship.png';
-    this.maxBullets = Math.floor(Math.abs(width - height)/50);
+    this.sprite.src = 'images/ship.png';
+    this.maxBullets = Math.max(Math.floor(Math.abs(width - height)/50), 5);
+    console.log(this.maxBullets);
   }
   Ship.prototype = new Surrogate();
 
@@ -157,7 +164,7 @@ var Asteroids = (function() {
     ctx.restore();
   };
 
-  //
+  // Returns boolean denoting if ship is hit by an asteroid
   Ship.prototype.isHit = function(asteroids) {
     for (var i = 0; i < asteroids.length; i++){
       if (this.collideWith(asteroids[i]))
@@ -166,46 +173,61 @@ var Asteroids = (function() {
     return false;
   };
 
+  // Updates the ship's speed and position on the canvas
   Ship.prototype.update = function(width, height, game) {
     var speed = Math.sqrt(
       Math.pow(this.velocity['x'],2) +
       Math.pow(this.velocity['y'],2));
 
+    // Updates ship's angle of trajectory
     if (key.isPressed("left"))
       this.angle -= (Math.PI / 30);
     if (key.isPressed("right"))
       this.angle += (Math.PI / 30);
+
+    // Decelerates the ship manually
     if (key.isPressed("down")) {
       this.velocity.x -= Math.cos(this.angle - Math.PI/2)/6;
       this.velocity.y -= Math.sin(this.angle - Math.PI/2)/6;
     }
 
+    // Accelerates the ship
     if (key.isPressed("up") && speed < 20) {
       this.velocity.x += Math.cos(this.angle - Math.PI/2)/4;
       this.velocity.y += Math.sin(this.angle - Math.PI/2)/4;
     } else {
+      // Passively decelerates the ship by 2% each iteration if 
+      // no key is pressed
       this.velocity.x *= .98;
       this.velocity.y *= .98;
     }
 
+    // Fires a bullet if 'space' is pressed and there are less than the
+    // max number of bullets on the screen
     if (key.isPressed("space") && game.bullets.length < this.maxBullets) {
       this.fireBullet(game);
-      console.log(game.bullets);
     }
 
+    // Updates the ship's position
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
 
-    this.offscreen(width, height)
+    // Updates the ship's position if it moves offscreen
+    this.offscreen(width, height);
     return this.position;
   };
 
+  // Fires a bullet
   Ship.prototype.fireBullet = function(game){
-    var dup_position = {"x": this.position["x"], "y": this.position["y"]}
-    game.bullets.push(new Bullet(dup_position, this.angle))
+    var dup_position = {"x": this.position["x"], "y": this.position["y"]};
+    game.bullets.push(new Bullet(dup_position, this.angle));
   };
 
-  //Game Classs
+
+
+  ////////////////
+  // Game Class //
+  ////////////////
   function Game(width, height) {
     this.width = width;
     this.height = height;
@@ -215,40 +237,50 @@ var Asteroids = (function() {
     this.minAsteroids = 5;
 
     this.score = 0;
+    this.level = 1;
   }
 
+  // Redraws the canvas and all instantiated MovingObjects
   Game.prototype.draw = function(ctx) {
     ctx.clearRect(0, 0, this.width, this.height);
     ctx.drawImage(img, 0, 0, this.width, this.height);
     
     ctx.font = "bold 20px sans-serif";
 
-
     _.union(this.asteroids, this.bullets).forEach(function(elem, i, array) {
       elem.draw(ctx);
     });
 
     this.ship.draw(ctx);
-    ctx.fillStyle = "black"
-    ctx.fillText("Score: " + this.score, 10, 20 );
+    ctx.fillStyle = "black";
+    ctx.fillText("Score: " + this.score, 10, 25);
+    ctx.fillText("Level: " + this.level, this.width - 85, 25);
   }
 
+  // Updates the game by calling all necessary methods on each class
   Game.prototype.update = function(ctx) {
     var that = this;
 
-    if ((that.score + 1) % 50 == 0 )
-      that.minAsteroids += 2
+    // increases the number of asteroids relative to the score
+    if ((that.score+1) % 100 == 0 ) {
+      that.minAsteroids += 2;
+      that.score += 10;
+      that.level += 1;
+    }
+      
 
-    var total = that.minAsteroids + (Math.floor(Math.random() * 10))
+    // Insert new asteroids when others are destroyed
+    var total = that.minAsteroids + (Math.floor(Math.random() * 10));
     while (this.asteroids.length < total){
-      var a = Asteroid.randomAsteroid(this.width, this.height)
+      var a = Asteroid.randomAsteroid(this.width, this.height);
       if (!a.collideWith(this.ship)) {
-        this.asteroids.push(a)
+        this.asteroids.push(a);
       }
     }
 
-    this.ship.update(this.width, this.height, this)
+    this.ship.update(this.width, this.height, this);
 
+    // deletes offscreen bullets
     this.bullets.forEach(function(elem, i) {
       if (elem.offscreen(that.width, that.height)) {
         delete that.bullets[i];
@@ -256,10 +288,12 @@ var Asteroids = (function() {
     });
     this.bullets = _.compact(this.bullets);
 
+    // updates the position and velocity of bullets and asteroids
     _.union(this.asteroids, this.bullets).forEach(function(elem, i, array) {
       elem.update(that.width, that.height);
     })
 
+    // Handle bullet/asteroid collision and ensuing damage to asteroid
     this.bullets.forEach(function(bullet, i){
       that.asteroids.forEach(function(asteroid, j){
         if (bullet.collideWith(asteroid)) {
@@ -271,29 +305,29 @@ var Asteroids = (function() {
             delete that.asteroids[j];
           }
         }
-      })
+      });
+    });
 
-    })
-    this.bullets = _.compact(this.bullets);
+    // Update asteroids array to account for those destroyed 
     this.asteroids = _.compact(this.asteroids);
     this.draw(ctx);
 
-
     //Game Pov
-    if(this.ship.isHit(this.asteroids)) {
-      clearInterval(global_handle);
-      global_handle = 0;
+    if (this.ship.isHit(this.asteroids)) {
+      window.clearInterval(window.global_handle);
+      window.global_handle = 0;
       ctx.fillStyle = "red"
       ctx.font = ("bold " + Math.floor(Math.abs(this.width)/10) + "px monospace");
-      ctx.fillText("Game Over.", this.width/4, this.height/2 );
+      ctx.fillText("Game Over.", this.width/4, this.height/2);
     }
   }
 
+  // Initializes the game
   Game.prototype.start = function (canvasEl) {
     var ctx = canvasEl.getContext("2d");
 
-    var that = this;
-    global_handle = window.setInterval(function () {
+    var that          = this;
+    window.global_handle = window.setInterval(function () {
       that.update(ctx);
     }, 30);
   };
@@ -302,7 +336,7 @@ var Asteroids = (function() {
     Asteroid: Asteroid,
     Game: Game
   };
-})();
+})(window, undefined);
 
 
 
