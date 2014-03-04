@@ -12,5 +12,8 @@ The ```<canvas>``` will resize itself based on the size of your browser window o
 ```←``` - rotate left  
 ```space``` - fire weapon  
 
+## Demo
+Check out the [demo](http://wcvd.me/Asteroids) here.
+
 ## Construction
 This game was built using the HTML5 ```<canvas>``` element, underscore.js, and keymaster.js. 
